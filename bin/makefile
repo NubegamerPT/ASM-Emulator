@@ -6,7 +6,7 @@ CFLAGS = -I./lib/ncurses/include -std=c++17
 LDFLAGS = -lncurses
 
 # Output executable name
-OUT = ASM.exe
+OUT = ASM
 
 # Source files
 SRC = ../src/main.cpp
