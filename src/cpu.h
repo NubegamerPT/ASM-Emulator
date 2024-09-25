@@ -43,17 +43,17 @@ class CPU
 {
 private:
     // registers
-    uint8_t reg8[4];
+    uint8_t reg8[4] = {0};
 
     // 16 bit registers
-    uint16_t reg16[2];
+    uint16_t reg16[2] = {0};
     uint16_t pc = 0;
 
     // float registers
-    float regf[3];
+    float regf[3] = {0};
 
     // ram or memory
-    uint8_t mem[16384];
+    uint8_t mem[16384] = {0};
 
     std::unordered_map<std::string, opcode> command_to_reg = {
         {"a8", OPCODE_A8},
