@@ -49,6 +49,7 @@ private:
     // 16 bit registers
     uint16_t reg16[2] = {0};
     uint16_t pc = 0;
+    uint16_t sc = 0;
 
     // float registers
     float regf[3] = {0};
@@ -106,20 +107,20 @@ public:
         if (it != command_to_reg.end())
         {
             opcode op = it->second;
-            mem[pc++] = op; // Store the opcode in memory
+            mem[sc++] = op; // Store the opcode in memory
 
             for (size_t i = 1; i < components.size(); ++i)
             {
                 if (components[i][0] == 'a' || components[i][0] == 'b' || components[i][0] == 'c' || components[i][0] == 'd')
                 {
                     // Assuming register names are a8, b8, c8, d8, etc.
-                    mem[pc++] = components[i][0] - 'a'; // Store register index (0 for a, 1 for b, etc.)
+                    mem[sc++] = components[i][0] - 'a'; // Store register index (0 for a, 1 for b, etc.)
                 }
                 else
                 {
                     try
                     {
-                        mem[pc++] = std::stoi(components[i]); // Convert immediate value to integer and store in memory
+                        mem[sc++] = std::stoi(components[i]); // Convert immediate value to integer and store in memory
                     }
                     catch (const std::invalid_argument &e)
                     {
@@ -138,23 +139,36 @@ public:
         return 0; // Return appropriate value based on your logic
     }
 
-    opcode execute()
+    // Execute the instruction pointed by the program counter
+    int execute()
     {
-        int regIndex2 = mem[pc++];
-        int regIndex = mem[pc+2];
-        opcode op = static_cast<opcode>(mem[pc++]);
+        int op = static_cast<int>(mem[pc++]); // Read the last opcode
 
         switch (op)
         {
-        case 0x09:
-            reg8[regIndex] = reg8[regIndex2] + mem[pc + 3];
-            break;
-        case 0x0A:
-            reg8[regIndex] = reg8[regIndex2] - mem[pc + 3];
+        case OPCODE_ADDI:
+        {                                      // Add immediate
+            uint16_t regIndex1 = static_cast<int>(mem[pc++]);         // First register
+            uint16_t regIndex2 = static_cast<int>(mem[pc++]);     // Second register
+            int immediateValue = static_cast<int>(mem[pc++]); // Immediate value
+            reg8[regIndex1] = reg8[regIndex2] + immediateValue; // Add immediate value to register
             break;
         }
+        case OPCODE_SUBB:
+        {                                      // Subtract immediate
+            int regIndex1 = mem[pc++];         // First register index
+            int immediateValue = mem[pc++];    // Immediate value
+            reg8[regIndex1] -= immediateValue; // Subtract immediate value from register
+            std::cout << std::endl <<"Executed SUBB: reg8[" << regIndex1 << "] = " << static_cast<int>(reg8[regIndex1]) << std::endl;
+            break;
+        }
+        // Handle other opcodes...
+        default:
+            std::cerr << "Unknown opcode: " << std::hex << op << std::endl;
+            return -1;
+        }
 
-        return op;
+        return op; // Execution successful
     }
     const char *dump(int line)
     {

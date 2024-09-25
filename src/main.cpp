@@ -46,7 +46,7 @@ int main()
         print(terminal, i/4 + 1, 1, core.dump(i));
     }
 
-    opcode temp = core.execute();
+    int temp = core.execute();
 
     print(terminal, 13, 1, "Executed: ", temp);
 
