@@ -37,13 +37,22 @@ int main()
     registers = create_newPanel((LINES / 5) * 2, (COLS / 5) * 2, 0, (COLS / 5) * 3, "Registers panel");
     program = create_newPanel((LINES / 5) * 3, (COLS / 5) * 2, (LINES / 5) * 2, (COLS / 5) * 3, "Program panel");
 
-    core.load("addi a8 b8 5");
+    core.load("addi b8 c8 5");
     core.load("subb b8 d8 5");
-    core.load("halt");
+    core.load("load a8 9");
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 48; i += 4)
     {
-        print(terminal, i + 1, 1,"0x", core.getmem(i));
+        print(terminal, i/4 + 1, 1, core.dump(i));
+    }
+
+    opcode temp = core.execute();
+
+    print(terminal, 13, 1, "Executed: ", temp);
+
+    for (int i = 0; i < 4; i++)
+    {
+        print(registers, i + 1, 1, "Registor:" ,core.getREG8(i));
     }
 
     getch();  // wait for user input

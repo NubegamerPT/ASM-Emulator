@@ -4,6 +4,7 @@
 #include <string.h>
 #include <cstdint>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -106,7 +107,6 @@ public:
         {
             opcode op = it->second;
             mem[pc++] = op; // Store the opcode in memory
-            std::cout << "Storing opcode " << op << " for command " << components[0] << std::endl;
 
             for (size_t i = 1; i < components.size(); ++i)
             {
@@ -138,30 +138,52 @@ public:
         return 0; // Return appropriate value based on your logic
     }
 
+    opcode execute()
+    {
+        int regIndex2 = mem[pc++];
+        int regIndex = mem[pc+2];
+        opcode op = static_cast<opcode>(mem[pc++]);
+
+        switch (op)
+        {
+        case 0x09:
+            reg8[regIndex] = reg8[regIndex2] + mem[pc + 3];
+            break;
+        case 0x0A:
+            reg8[regIndex] = reg8[regIndex2] - mem[pc + 3];
+            break;
+        }
+
+        return op;
+    }
     const char *dump(int line)
     {
-        std::stringstream ss; // Create a stringstream to build the output string
+        static char buffer[50]; // Static buffer to hold the result
 
-        int startIndex = line * 4;     // Calculate the starting index for the given line
-        int endIndex = startIndex + 4; // Calculate the ending index for the given line
+        std::stringstream ss;
 
-        if (startIndex >= getMemSize())
+        // Ensure we don't go out of bounds
+        for (int i = 0; i < 4; ++i)
         {
-            return ""; // Return an empty string if the line number is out of bounds
+            if (line + i < 16384)
+            { // Check if within bounds
+                ss << "0x" << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(mem[line + i]) << " ";
+            }
+            else
+            {
+                ss << "0x-- "; // Indicate out of bounds
+            }
         }
 
-        for (int i = startIndex; i < endIndex && i < getMemSize(); ++i)
-        {
-            ss << std::hex << "0x" << (int)mem[i] << " ";
-        }
+        // Copy the resulting string to the buffer
+        std::strncpy(buffer, ss.str().c_str(), sizeof(buffer) - 1);
+        buffer[sizeof(buffer) - 1] = '\0'; // Ensure null-termination
 
-        ss << std::dec;                       // Reset to decimal format
-        static std::string output = ss.str(); // Store the built string in a static variable
-        return output.c_str();                // Return the C-style string
+        return buffer; // Return pointer to the buffer
     }
 
-    int getmem(int index)
+    int getREG8(int index)
     {
-        return mem[index];
+        return reg8[index];
     }
 };
