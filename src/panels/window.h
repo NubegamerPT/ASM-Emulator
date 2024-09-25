@@ -1,6 +1,6 @@
 #pragma once
 #include <cstring>
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <iostream>
 #include <string>
 

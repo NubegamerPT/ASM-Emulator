@@ -1,9 +1,9 @@
-#include <ncurses/ncurses.h>
+#include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "cpu.h"
-#include "panels/window.cpp"
+#include "./panels/window.cpp"
 void init_colors()
 {
     if (has_colors() == FALSE)
