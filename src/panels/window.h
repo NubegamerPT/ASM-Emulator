@@ -1,6 +1,12 @@
 #pragma once
 #include <cstring>
-#include <ncurses.h>
+
+#ifndef WIN32
+#include <ncurses/ncurses.h>
+#else
+#include <curses.h>
+#endif
+
 #include <iostream>
 #include <string>
 

@@ -1,4 +1,9 @@
-#include <ncurses.h>
+#ifndef WIN32 
+#include <ncurses/ncurses.h>
+#else
+#include <curses.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -15,6 +20,7 @@ void init_colors()
     start_color();
     init_pair(1, COLOR_GREEN, COLOR_BLACK); // Define color pair 1 as green text on a black background
 }
+
 int main()
 {
     CPU core;
@@ -50,10 +56,11 @@ int main()
 
     print(terminal, 13, 1, "Executed: ", temp);
 
-    for (int i = 0; i < 4; i++)
-    {
-        print(registers, i + 1, 1, "Registor:" ,core.getREG8(i));
-    }
+    print(registers, 1, 1, "Registers:");
+    print(registers, 2, 2, "A8: ", core.getREG8(0));
+    print(registers, 3, 2, "B8: ", core.getREG8(1));
+    print(registers, 4, 2, "C8: ", core.getREG8(2));
+    print(registers, 5, 2, "D8: ", core.getREG8(3));
 
     getch();  // wait for user input
     endwin(); // close the window
