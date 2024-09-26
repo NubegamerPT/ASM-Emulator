@@ -56,6 +56,7 @@ private:
 
     // ram or memory
     uint8_t mem[16384] = {0};
+    uint8_t stack[256] = {0};
 
     std::unordered_map<std::string, opcode> command_to_reg = {
         {"a8", OPCODE_A8},
@@ -95,12 +96,6 @@ public:
         while (ss >> item)
         {
             components.push_back(item);
-        }
-
-        if (components.size() < 2)
-        {
-            std::cerr << "Invalid command format" << std::endl;
-            return -1; // Error code for invalid command format
         }
 
         auto it = command_to_reg.find(components[0]);
@@ -147,19 +142,48 @@ public:
         switch (op)
         {
         case OPCODE_ADDI:
-        {                                      // Add immediate
-            uint16_t regIndex1 = static_cast<int>(mem[pc++]);         // First register
-            uint16_t regIndex2 = static_cast<int>(mem[pc++]);     // Second register
-            int immediateValue = static_cast<int>(mem[pc++]); // Immediate value
+        {                                                       // Add immediate
+            uint16_t regIndex1 = static_cast<int>(mem[pc++]);   // First register
+            uint16_t regIndex2 = static_cast<int>(mem[pc++]);   // Second register
+            uint16_t immediateValue = static_cast<int>(mem[pc++]);   // Immediate value
             reg8[regIndex1] = reg8[regIndex2] + immediateValue; // Add immediate value to register
             break;
         }
         case OPCODE_SUBB:
-        {                                      // Subtract immediate
-            int regIndex1 = mem[pc++];         // First register index
-            int immediateValue = mem[pc++];    // Immediate value
-            reg8[regIndex1] -= immediateValue; // Subtract immediate value from register
-            std::cout << std::endl <<"Executed SUBB: reg8[" << regIndex1 << "] = " << static_cast<int>(reg8[regIndex1]) << std::endl;
+        {                                                     // Subtract immediate
+            uint16_t regIndex1 = static_cast<int>(mem[pc++]); // First register
+            uint16_t regIndex2 = static_cast<int>(mem[pc++]); // Second register
+            uint16_t immediateValue = static_cast<int>(mem[pc++]); // Immediate value
+            reg8[regIndex1] = reg8[regIndex2] - immediateValue; // Add immediate value to register
+            break;
+        }
+        case OP_HALT:
+            return 1; // Halt the CPU
+            break;
+        case OPCODE_LOAD:
+        {
+            uint16_t regIndex = static_cast<int>(mem[pc++]); // Register index
+            uint16_t imidiate = static_cast<int>(mem[pc++]); // Memory index
+            reg8[regIndex] = imidiate;
+            break;
+        }
+        case OPCODE_STORE:
+        {
+            uint16_t regIndex = static_cast<int>(mem[pc++]); // Register index
+            uint16_t imidiate = static_cast<int>(mem[pc++]); // Memory index
+            mem[imidiate] = reg8[regIndex];
+            break;
+        }
+        case OPCODE_PUSH:
+        {
+            uint16_t regIndex = static_cast<int>(mem[pc++]); // Register index
+            stack[sc++] = reg8[regIndex];
+            break;
+        }
+        case OPCODE_POP:
+        {
+            uint16_t regIndex = static_cast<int>(mem[pc++]); // Register index
+            reg8[regIndex] = stack[sc--];
             break;
         }
         // Handle other opcodes...
@@ -168,10 +192,16 @@ public:
             return -1;
         }
 
-        return op; // Execution successful
+        return 0; // Continue execution
+    }
+
+    void run()
+    {
+        while (1 != execute()){}
     }
     const char *dump(int line)
     {
+        bool first = true; // Static variable to indicate first call
         static char buffer[50]; // Static buffer to hold the result
 
         std::stringstream ss;
@@ -179,6 +209,12 @@ public:
         // Ensure we don't go out of bounds
         for (int i = 0; i < 4; ++i)
         {
+            if(first) // Print memory address only once
+            {
+                ss << std::setw(2) << std::setfill('0') << std::hex << line + i << ": "; // Print memory address
+                first = false;
+            }
+
             if (line + i < 16384)
             { // Check if within bounds
                 ss << "0x" << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(mem[line + i]) << " ";
@@ -199,5 +235,48 @@ public:
     int getREG8(int index)
     {
         return reg8[index];
+    }
+
+    int getREG16(int index)
+    {
+        return reg16[index];
+    }
+
+    float getREGF(int index)
+    {
+        return regf[index];
+    }
+
+    const char *getStack(int line)
+    {
+        bool first = true; // Static variable to indicate first call
+        static char buffer[50]; // Static buffer to hold the result
+
+        std::stringstream ss;
+
+        // Ensure we don't go out of bounds
+        for (int i = 0; i < 4; ++i)
+        {
+            if(first) // Print memory address only once
+            {
+                ss << std::setw(2) << std::setfill('0') << std::hex << line + i << ": "; // Print memory address
+                first = false;
+            }
+
+            if (line + i < 256)
+            { // Check if within bounds
+                ss << "0x" << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(stack[line + i]) << " ";
+            }
+            else
+            {
+                ss << "0x-- "; // Indicate out of bounds
+            }
+        }
+
+        // Copy the resulting string to the buffer
+        std::strncpy(buffer, ss.str().c_str(), sizeof(buffer) - 1);
+        buffer[sizeof(buffer) - 1] = '\0'; // Ensure null-termination
+
+        return buffer; // Return pointer to the buffer
     }
 };

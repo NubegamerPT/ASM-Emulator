@@ -62,3 +62,21 @@ void print(WINDOW *local_win, int y, int x, const char *text,  int num)
     mvwprintw(local_win, y, x + 1, "%s%d", text, num);
     wrefresh(local_win);
 }
+
+void print8(WINDOW *local_win, int y, int x, const char *text,  int num)
+{
+    mvwprintw(local_win, y, x + 1, "%s%08X", text, num);
+    wrefresh(local_win);
+}
+
+void print16(WINDOW *local_win, int y, int x, const char *text,  int num)
+{
+    mvwprintw(local_win, y, x + 1, "%s%016X", text, num);
+    wrefresh(local_win);
+}
+
+void printff(WINDOW *local_win, int y, int x, const char *text,  float num)
+{
+    mvwprintw(local_win, y, x + 1, "%s%032.5f", text, num);
+    wrefresh(local_win);
+}

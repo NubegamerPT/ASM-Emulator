@@ -25,42 +25,55 @@ int main()
 {
     CPU core;
 
-    WINDOW *terminal;
-    WINDOW *registers;
+    WINDOW *memory;
+    WINDOW *registors;
     WINDOW *program;
+    WINDOW *terminal;
+    WINDOW *info;
 
-    initscr();     // initialize the screen
-    init_colors(); // Initialize colors
-
-    noecho(); // Don't echo user input
-
+    // Initialize ncurses
+    initscr();
+    noecho();
+    cbreak();
     keypad(stdscr, TRUE); // Enable special keys like arrows
-
-    refresh();
     curs_set(0);
+    
+    refresh();
 
-    terminal = create_newPanel(LINES, (COLS / 5) * 3, 0, 0, "Terminal panel");
-    registers = create_newPanel((LINES / 5) * 2, (COLS / 5) * 2, 0, (COLS / 5) * 3, "Registers panel");
-    program = create_newPanel((LINES / 5) * 3, (COLS / 5) * 2, (LINES / 5) * 2, (COLS / 5) * 3, "Program panel");
+    memory = create_newPanel(LINES - 3, (COLS / 7) * 1, 0, 0, "Memory panel");
+    terminal = create_newPanel(LINES - 3, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
+    registors = create_newPanel((LINES / 5) * 2, (COLS / 7) * 2, 0, (COLS / 7) * 5, "Registors panel");
+    program = create_newPanel((LINES / 5) * 3 - 2, (COLS / 7) * 2, (LINES / 5) * 2, (COLS / 7) * 5, "Stack panel");
+    info = create_newPanel(3, COLS, LINES - 3, 0, "Info panel");
 
-    core.load("addi b8 c8 5");
-    core.load("subb b8 d8 5");
-    core.load("load a8 9");
+    print(info, 1, 1, "Info: Press [F] to go step-by-step or [R] to run the program");
 
-    for (int i = 0; i < 48; i += 4)
+    core.load("addi a8 a8 2");
+    core.load("addi b8 a8 4");
+    core.load("subb c8 b8 2");
+    core.load("halt");
+
+    for (int i = 0; i < 162; i += 4)
     {
-        print(terminal, i/4 + 1, 1, core.dump(i));
+        print(memory, i/4 + 1, 1, core.dump(i));
     }
 
-    int temp = core.execute();
+    for (int i = 0; i < 92; i += 4)
+    {
+        print(program, i/4 + 1, 1, core.getStack(i));
+    }
 
-    print(terminal, 13, 1, "Executed: ", temp);
+    core.run();
 
-    print(registers, 1, 1, "Registers:");
-    print(registers, 2, 2, "A8: ", core.getREG8(0));
-    print(registers, 3, 2, "B8: ", core.getREG8(1));
-    print(registers, 4, 2, "C8: ", core.getREG8(2));
-    print(registers, 5, 2, "D8: ", core.getREG8(3));
+    print(registors, 1, 1, "Registors:");
+    print8(registors, 2, 2, "A8: ", core.getREG8(0));
+    print8(registors, 3, 2, "B8: ", core.getREG8(1));
+    print8(registors, 4, 2, "C8: ", core.getREG8(2));
+    print8(registors, 5, 2, "D8: ", core.getREG8(3));
+    print16(registors, 2, 18, "A16: ", core.getREG16(0));
+    print16(registors, 3, 18, "B16: ", core.getREG16(1));
+    printff(registors, 4, 18, "AF:  ", core.getREGF(0));
+    printff(registors, 5, 18, "BF:  ", core.getREGF(1));
 
     getch();  // wait for user input
     endwin(); // close the window
