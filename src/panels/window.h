@@ -1,7 +1,7 @@
 #pragma once
 #include <cstring>
 
-#ifndef WIN32
+#ifdef WIN32
 #include <ncurses/ncurses.h>
 #else
 #include <curses.h>
