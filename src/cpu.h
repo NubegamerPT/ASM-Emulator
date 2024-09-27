@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -50,6 +51,7 @@ private:
     uint16_t reg16[2] = {0};
     uint16_t pc = 0;
     uint16_t sc = 0;
+    uint16_t sp = 0;
 
     // float registers
     float regf[3] = {0};
@@ -108,30 +110,22 @@ public:
             {
                 if (components[i][0] == 'a' || components[i][0] == 'b' || components[i][0] == 'c' || components[i][0] == 'd')
                 {
-                    // Assuming register names are a8, b8, c8, d8, etc.
-                    mem[sc++] = components[i][0] - 'a'; // Store register index (0 for a, 1 for b, etc.)
+                    mem[sc++] = components[i][0] - 'a';
                 }
                 else
                 {
-                    try
-                    {
-                        mem[sc++] = std::stoi(components[i]); // Convert immediate value to integer and store in memory
-                    }
-                    catch (const std::invalid_argument &e)
-                    {
-                        std::cerr << "Invalid immediate value: " << components[i] << std::endl;
-                        return -1; // Error code for invalid immediate value
-                    }
+                    mem[sc++] = std::stoi(components[i]);
                 }
             }
-        }
-        else
-        {
-            std::cerr << "Invalid command: " << components[0] << std::endl;
-            return -1; // Error code for invalid command
+
+            // Pad the remaining memory slots with zeros if the instruction has fewer than 4 components
+            while (sc % 4 != 0)
+            {
+                mem[sc++] = 0;
+            }
         }
 
-        return 0; // Return appropriate value based on your logic
+        return 0; // Return appropriate value
     }
 
     // Execute the instruction pointed by the program counter
@@ -142,19 +136,19 @@ public:
         switch (op)
         {
         case OPCODE_ADDI:
-        {                                                       // Add immediate
-            uint16_t regIndex1 = static_cast<int>(mem[pc++]);   // First register
-            uint16_t regIndex2 = static_cast<int>(mem[pc++]);   // Second register
-            uint16_t immediateValue = static_cast<int>(mem[pc++]);   // Immediate value
-            reg8[regIndex1] = reg8[regIndex2] + immediateValue; // Add immediate value to register
+        {
+            uint16_t regIndex1 = static_cast<int>(mem[pc++]);
+            uint16_t regIndex2 = static_cast<int>(mem[pc++]);
+            uint16_t immediateValue = static_cast<int>(mem[pc++]);
+            reg8[regIndex1] = reg8[regIndex2] + immediateValue;
             break;
         }
         case OPCODE_SUBB:
-        {                                                     // Subtract immediate
-            uint16_t regIndex1 = static_cast<int>(mem[pc++]); // First register
-            uint16_t regIndex2 = static_cast<int>(mem[pc++]); // Second register
-            uint16_t immediateValue = static_cast<int>(mem[pc++]); // Immediate value
-            reg8[regIndex1] = reg8[regIndex2] - immediateValue; // Add immediate value to register
+        {
+            uint16_t regIndex1 = static_cast<int>(mem[pc++]);
+            uint16_t regIndex2 = static_cast<int>(mem[pc++]);
+            uint16_t immediateValue = static_cast<int>(mem[pc++]);
+            reg8[regIndex1] = reg8[regIndex2] - immediateValue;
             break;
         }
         case OP_HALT:
@@ -162,31 +156,35 @@ public:
             break;
         case OPCODE_LOAD:
         {
-            uint16_t regIndex = static_cast<int>(mem[pc++]); // Register index
-            uint16_t imidiate = static_cast<int>(mem[pc++]); // Memory index
+            uint16_t regIndex = static_cast<int>(mem[pc++]);
+            uint16_t imidiate = static_cast<int>(mem[pc++]);
+            pc++;
             reg8[regIndex] = imidiate;
             break;
         }
         case OPCODE_STORE:
         {
-            uint16_t regIndex = static_cast<int>(mem[pc++]); // Register index
-            uint16_t imidiate = static_cast<int>(mem[pc++]); // Memory index
+            uint16_t regIndex = static_cast<int>(mem[pc++]);
+            uint16_t imidiate = static_cast<int>(mem[pc++]);
+            pc++;
             mem[imidiate] = reg8[regIndex];
             break;
         }
         case OPCODE_PUSH:
         {
             uint16_t regIndex = static_cast<int>(mem[pc++]); // Register index
-            stack[sc++] = reg8[regIndex];
+            pc += 2;
+            stack[sp++] = reg8[regIndex];
             break;
         }
         case OPCODE_POP:
         {
             uint16_t regIndex = static_cast<int>(mem[pc++]); // Register index
-            reg8[regIndex] = stack[sc--];
+            pc += 2;
+            sp--;
+            reg8[regIndex] = stack[sp];
             break;
         }
-        // Handle other opcodes...
         default:
             std::cerr << "Unknown opcode: " << std::hex << op << std::endl;
             return -1;
@@ -197,26 +195,27 @@ public:
 
     void run()
     {
-        while (1 != execute()){}
+        while (1 != execute())
+        {
+        }
     }
     const char *dump(int line)
     {
-        bool first = true; // Static variable to indicate first call
-        static char buffer[50]; // Static buffer to hold the result
+        bool first = true; // Static variable to indicate first
+        static char buffer[50];
 
         std::stringstream ss;
 
-        // Ensure we don't go out of bounds
         for (int i = 0; i < 4; ++i)
         {
-            if(first) // Print memory address only once
+            if (first) // Print memory address only once
             {
                 ss << std::setw(2) << std::setfill('0') << std::hex << line + i << ": "; // Print memory address
                 first = false;
             }
 
             if (line + i < 16384)
-            { // Check if within bounds
+            {
                 ss << "0x" << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(mem[line + i]) << " ";
             }
             else
@@ -225,9 +224,8 @@ public:
             }
         }
 
-        // Copy the resulting string to the buffer
-        std::strncpy(buffer, ss.str().c_str(), sizeof(buffer) - 1);
-        buffer[sizeof(buffer) - 1] = '\0'; // Ensure null-termination
+        strncpy(buffer, ss.str().c_str(), sizeof(buffer) - 1);
+        buffer[sizeof(buffer) - 1] = '\0'; // null-termination
 
         return buffer; // Return pointer to the buffer
     }
@@ -249,22 +247,21 @@ public:
 
     const char *getStack(int line)
     {
-        bool first = true; // Static variable to indicate first call
-        static char buffer[50]; // Static buffer to hold the result
+        bool first = true;
+        static char buffer[50];
 
         std::stringstream ss;
 
-        // Ensure we don't go out of bounds
         for (int i = 0; i < 4; ++i)
         {
-            if(first) // Print memory address only once
+            if (first)
             {
                 ss << std::setw(2) << std::setfill('0') << std::hex << line + i << ": "; // Print memory address
                 first = false;
             }
 
             if (line + i < 256)
-            { // Check if within bounds
+            {
                 ss << "0x" << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(stack[line + i]) << " ";
             }
             else
@@ -273,10 +270,24 @@ public:
             }
         }
 
-        // Copy the resulting string to the buffer
-        std::strncpy(buffer, ss.str().c_str(), sizeof(buffer) - 1);
+        strncpy(buffer, ss.str().c_str(), sizeof(buffer) - 1);
         buffer[sizeof(buffer) - 1] = '\0'; // Ensure null-termination
 
         return buffer; // Return pointer to the buffer
+    }
+
+    uint16_t getPC()
+    {
+        return pc;
+    }
+
+    uint16_t getSC()
+    {
+        return sc;
+    }
+
+    uint16_t getSP()
+    {
+        return sp;
     }
 };
