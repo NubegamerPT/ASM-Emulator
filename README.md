@@ -34,4 +34,4 @@ I've picked the best features of assembly language while leaving out the complex
 
 Simply donwload the most recent Package (soon available), and get ready to start mashing your keyboard!
 
-*This program follows*
+*This program follows MIT License*
