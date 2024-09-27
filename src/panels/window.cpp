@@ -2,9 +2,7 @@
 
 WINDOW *create_newPanel(int height, int width, int starty, int startx)
 {
-    WINDOW *local_win;
-
-    local_win = newwin(height, width, starty, startx);
+    WINDOW *local_win = newwin(height, width, starty, startx);
     box(local_win, 0, 0); /* 0, 0 dá caracteres padrão para as linhas verticais and horizontais	*/
     wrefresh(local_win);  /* Mostra aquela caixa 	*/
 
@@ -14,12 +12,10 @@ WINDOW *create_newPanel(int height, int width, int starty, int startx)
 WINDOW *create_newPanel(int height, int width, int starty, int startx, const char *title)
 {
     WINDOW *local_win;
-
     local_win = newwin(height, width, starty, startx);
     box(local_win, 0, 0); /* 0, 0 dá caracteres padrão para as linhas verticais and horizontais	*/
-    mvwprintw(local_win, 0, 2, title);
+    mvwprintw(local_win, 0, 2, "[ %s ]", title);
     wrefresh(local_win); /* Mostra aquela caixa 	*/
-
     return local_win;
 }
 
@@ -57,26 +53,97 @@ void print(WINDOW *local_win, int y, int x, const char *text)
     wrefresh(local_win);
 }
 
-void print(WINDOW *local_win, int y, int x, const char *text,  int num)
+void print(WINDOW *local_win, int y, int x, const char *text, int num)
 {
     mvwprintw(local_win, y, x + 1, "%s%d", text, num);
     wrefresh(local_win);
 }
 
-void print8(WINDOW *local_win, int y, int x, const char *text,  int num)
+void print8(WINDOW *local_win, int y, int x, const char *text, int num)
 {
     mvwprintw(local_win, y, x + 1, "%s%08X", text, num);
     wrefresh(local_win);
 }
 
-void print16(WINDOW *local_win, int y, int x, const char *text,  int num)
+void print16(WINDOW *local_win, int y, int x, const char *text, int num)
 {
     mvwprintw(local_win, y, x + 1, "%s%016X", text, num);
     wrefresh(local_win);
 }
 
-void printff(WINDOW *local_win, int y, int x, const char *text,  float num)
+void printff(WINDOW *local_win, int y, int x, const char *text, float num)
 {
     mvwprintw(local_win, y, x + 1, "%s%032.5f", text, num);
+    wrefresh(local_win);
+}
+
+void displayMemory(WINDOW *local_win, int mem_size, CPU &core)
+{
+    uint16_t pc = core.getPC();
+
+    for (int i = 0; i < mem_size; i += 4)
+    {
+        const char *dump_line = core.dump(i);
+
+        // Check if the current memory address matches the PC
+        if (i == pc || i + 1 == pc || i + 2 == pc || i + 3 == pc)
+        {
+            if (pc == core.getSC())
+            {
+                wattron(local_win, COLOR_PAIR(1));
+                print(local_win, i / 4 + 1, 1, dump_line);
+                wattroff(local_win, COLOR_PAIR(1));
+            }
+            else
+            {
+                wattron(local_win, COLOR_PAIR(5));
+                print(local_win, i / 4 + 1, 1, dump_line);
+                wattroff(local_win, COLOR_PAIR(5));
+            }
+        }
+        else
+        {
+            print(local_win, i / 4 + 1, 1, dump_line); // Print normally
+        }
+    }
+}
+
+void displayStack(WINDOW *local_win, int stack_size, CPU &core)
+{
+    if (stack_size > 256) // Check if the showed memory insnt bigger than the stack
+    {
+        stack_size = 256;
+    }
+
+    for (int i = 0; i < stack_size; i += 4)
+    {
+        const char *dump_line = core.getStack(i);
+        if (i == core.getSP() || i + 1 == core.getSP() || i + 2 == core.getSP() || i + 3 == core.getSP())
+        {
+            if (i + 1 == core.getSP() || i + 2 == core.getSP() || i + 3 == core.getSP())
+            {
+                wattron(local_win, COLOR_PAIR(3));
+                print(local_win, i / 4 + 1, 1, dump_line);
+                wattroff(local_win, COLOR_PAIR(3));
+            }
+            else
+            {
+                wattron(local_win, COLOR_PAIR(5));
+                print(local_win, i / 4 + 1, 1, dump_line);
+                wattroff(local_win, COLOR_PAIR(5));
+            }
+        }
+        else
+        {
+            print(local_win, i / 4 + 1, 1, dump_line); // Print normally
+        }
+    }
+}
+
+void printColor(WINDOW *local_win, int color, int y, int x, const char *text)
+{
+    wattron(local_win, COLOR_PAIR(color));
+    mvwprintw(local_win, y, x + 1, text);
+    wattroff(local_win, COLOR_PAIR(color));
     wrefresh(local_win);
 }
