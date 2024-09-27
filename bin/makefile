@@ -1,5 +1,5 @@
 # Compiler settings
-CC = gcc  # Default to g++ or clang
+CC = g++  # Default to g++
 CFLAGS = -std=c++17
 LDFLAGS = -lncurses
 
@@ -9,30 +9,30 @@ OUT = ASM
 # Source files
 SRC = ../src/main.cpp
 
-# OS detection (Windows or Mac)
-UNAME_S := $(shell uname -s)
+# OS detection
+ifeq ($(OS),Windows_NT)
+    RM = del /Q
+    EXE = .exe
+    CFLAGS += -I/C:/msys64/mingw64/include
+    LDFLAGS += -L/C:/msys64/mingw64/lib -lncursesw
+else
+    RM = rm -f
+    EXE =
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        CFLAGS += -I/usr/local/include
+        LDFLAGS += -L/usr/local/lib -lncurses
+        CC = clang++
+    endif
+endif
 
 # All target
 all: $(OUT)
 
-# Windows build target
-ifeq ($(UNAME_S), Windows_NT)
-CFLAGS += -I/C:/msys64/mingw64/include -L/C:/msys64/mingw64/lib
+# Build target
 $(OUT): $(SRC)
-	$(CC) $(SRC) -o $(OUT).exe $(CFLAGS) $(LDFLAGS)
-else
-# Mac build target
-ifeq ($(UNAME_S), Darwin)
-CFLAGS += -I/usr/local/include -L/usr/local/lib  # Adjust for macOS if needed
-$(OUT): $(SRC)
-	clang++ $(SRC) -o $(OUT) $(CFLAGS) $(LDFLAGS)
-endif
-endif
+	$(CC) $(SRC) -o $(OUT)$(EXE) $(CFLAGS) $(LDFLAGS)
 
 # Clean up
 clean:
-ifeq ($(UNAME_S), Windows_NT)
-	del /Q $(OUT).exe
-else
-	rm -f $(OUT)
-endif
+	$(RM) $(OUT)$(EXE)
