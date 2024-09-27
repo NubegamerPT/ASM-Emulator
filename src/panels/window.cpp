@@ -1,4 +1,5 @@
 #include "window.h"
+#include "../cpu.h"
 
 WINDOW *create_newPanel(int height, int width, int starty, int startx)
 {

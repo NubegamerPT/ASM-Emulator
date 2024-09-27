@@ -13,11 +13,11 @@
 #include <signal.h>
 #include <iostream>
 
+#include "panels/window.cpp"
 #include "cpu.h"
-#include "./panels/window.cpp"
 
 // Define global windows
-WINDOW *memory, *registers, *program, *terminal, *info;
+WINDOW *memory, *registers, *program, *terminal, *info, *debug;
 
 void sleep_ms(int milliseconds)
 {
@@ -55,6 +55,17 @@ void printREGISTORS(CPU core)
     print8(registers, 6, 18, "SP:  ", core.getSP());
 }
 
+void write(WINDOW* win, std::string program, CPU& core) {
+    static int line = 1;
+    core.load(program);
+    std::ostringstream oss;
+    oss << std::setw(3) << line << ": " << program;
+    std::string line_number = oss.str();
+    const char* text = line_number.c_str();
+    print(win, line, 1, text);
+    line++;
+}
+
 int main()
 {
     CPU core;
@@ -88,25 +99,30 @@ int main()
     info = create_newPanel(3, COLS, LINES - 3, 0, "Info panel"); */
 
     memory = create_newPanel(LINES - 3, (COLS / 7) * 1, 0, 0, "Memory panel");
-    terminal = create_newPanel(LINES - 3, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
+    terminal = create_newPanel((LINES / 4) * 2, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
+    debug = create_newPanel(((LINES / 4) * 2) - 3, (COLS / 7) * 4, (LINES / 4) * 2, (COLS / 7) * 1, "Editor panel");
     registers = create_newPanel((LINES / 5) * 1, ((COLS / 7) * 2) + 4, 0, (COLS / 7) * 5, "Registors panel");
     program = create_newPanel(((LINES / 5) * 4) - 3, ((COLS / 7) * 2) + 4, (LINES / 5) * 1, (COLS / 7) * 5, "Stack panel");
     info = create_newPanel(3, COLS, LINES - 3, 0, "Info panel");
 
     print(info, 1, 1, "Info: Press [F] to go step-by-step or [R] to run the program");
 
-    core.load("load a8 1");
-    core.load("push a8");
-    core.load("load a8 2");
-    core.load("push a8");
-    core.load("load a8 5");
-    core.load("pop a8");
-    core.load("pop a8");
-    core.load("halt");
+    write(debug, "load a8 1", core);
+    write(debug, "push a8", core);
+    write(debug, "load a8 2", core);
+    write(debug, "push a8", core);
+    write(debug, "load a8 3", core);
+    write(debug, "push a8", core);
+    write(debug, "load a8 4", core);
+    write(debug, "push a8", core);
+    write(debug, "load a8 5", core);
+    write(debug, "push a8", core);
+    write(debug, "pop a8", core);
+    write(debug, "halt", core);
 
     bool hasStoped = false;
 
-    while (true)
+    while (!hasStoped)
     {
         printREGISTORS(core);
         displayMemory(memory, 138, core);
@@ -145,9 +161,12 @@ int main()
                 sleep_ms(200);
             }
             print(info, 1, 1, "                                                                                                    ");
-            printColor(info, 5, 1, 1, "Info: Program has reached HALT!");
+            printColor(info, 3, 1, 1, "Info: Program has reached HALT!");
+            hasStoped = true;
         }
     }
+
+    while(getch() != 'q') {}
     endwin(); // close the window
     return 0;
 }

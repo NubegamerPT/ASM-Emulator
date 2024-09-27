@@ -34,8 +34,8 @@ enum opcode
     OPCODE_POP = 0x0E,
     OPCODE_CLEAR = 0x0F,
 
-    OPCODE_ADDR = 0x10,
-    OPCODE_SUBR = 0x11,
+    OPCODE_ADDF = 0x10,
+    OPCODE_SUBF = 0x11,
 
     OP_HALT = 0xF0,
     OPCODE_NULL = 0xFF,
@@ -77,8 +77,8 @@ private:
         {"push", OPCODE_PUSH},
         {"pop", OPCODE_POP},
         {"clear", OPCODE_CLEAR},
-        {"addr", OPCODE_ADDR},
-        {"subr", OPCODE_SUBR},
+        {"addf", OPCODE_ADDF},
+        {"subf", OPCODE_SUBF},
         {"halt", OP_HALT},
         {"null", OPCODE_NULL},
     };
@@ -183,6 +183,14 @@ public:
             pc += 2;
             sp--;
             reg8[regIndex] = stack[sp];
+            break;
+        }
+        case OPCODE_ADDF:
+        {
+            int regIndex1 = static_cast<float>(mem[pc++]);
+            int regIndex2 = static_cast<float>(mem[pc++]);
+            float immediateValue = static_cast<float>(mem[pc++]);
+            regf[regIndex1] = regf[regIndex2] + immediateValue;
             break;
         }
         default:
