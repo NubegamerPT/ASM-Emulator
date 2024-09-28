@@ -29,15 +29,16 @@ enum opcode
     OPCODE_ADDI = 0x09,
     OPCODE_SUBB = 0x0A,
     OPCODE_LOAD = 0x0B,
-    OPCODE_JP = 0x0C,
+    OPCODE_JMP = 0x0C,
     OPCODE_PUSH = 0x0D,
     OPCODE_POP = 0x0E,
-    OPCODE_CLEAR = 0x0F,
 
-    OPCODE_ADDF = 0x10,
-    OPCODE_SUBF = 0x11,
+    OPCODE_BEQ = 0x0F, // Branch if equal
+    OPCODE_BNE = 0x10, // Branch if not equal
+    OPCODE_BEQZ = 0x11, // Branch if equal to zero
+    OPCODE_STL = 0x12, // Branch if bigger or equal
 
-    OP_HALT = 0xF0,
+    OPCODE_HALT = 0xF0,
     OPCODE_NULL = 0xFF,
 };
 
@@ -73,13 +74,14 @@ private:
         {"addi", OPCODE_ADDI},
         {"subb", OPCODE_SUBB},
         {"load", OPCODE_LOAD},
-        {"jp", OPCODE_JP},
+        {"jmp", OPCODE_JMP},
         {"push", OPCODE_PUSH},
         {"pop", OPCODE_POP},
-        {"clear", OPCODE_CLEAR},
-        {"addf", OPCODE_ADDF},
-        {"subf", OPCODE_SUBF},
-        {"halt", OP_HALT},
+        {"beq", OPCODE_BEQ},
+        {"bne", OPCODE_BNE},
+        {"beqz", OPCODE_BEQZ},
+        {"stl", OPCODE_STL},
+        {"halt", OPCODE_HALT},
         {"null", OPCODE_NULL},
     };
 
@@ -151,7 +153,7 @@ public:
             reg8[regIndex1] = reg8[regIndex2] - immediateValue;
             break;
         }
-        case OP_HALT:
+        case OPCODE_HALT:
             return 1; // Halt the CPU
             break;
         case OPCODE_LOAD:
@@ -162,11 +164,11 @@ public:
             reg8[regIndex] = imidiate;
             break;
         }
-        case OPCODE_JP:
+        case OPCODE_JMP:
         {
             int poss = static_cast<int>(mem[pc++]);
             pc += 2;
-            pc = poss;
+            pc =  (poss * 4) - 4;
             break;
         }
         case OPCODE_PUSH:
@@ -184,12 +186,48 @@ public:
             reg8[regIndex] = stack[sp];
             break;
         }
-        case OPCODE_ADDF:
+        case OPCODE_BEQ:
         {
-            int regIndex1 = static_cast<float>(mem[pc++]);
-            int regIndex2 = static_cast<float>(mem[pc++]);
-            float immediateValue = static_cast<float>(mem[pc++]);
-            regf[regIndex1] = regf[regIndex2] + immediateValue;
+            int regIndex1 = static_cast<int>(mem[pc++]);
+            int regIndex2 = static_cast<int>(mem[pc++]);
+            int immediateValue = static_cast<int>(mem[pc++]);
+            if (reg8[regIndex1] == reg8[regIndex2])
+            {
+                pc = (immediateValue * 4) - 4;
+            }
+            break;
+        }
+        case OPCODE_BNE:
+        {
+            int regIndex1 = static_cast<int>(mem[pc++]);
+            int regIndex2 = static_cast<int>(mem[pc++]);
+            int immediateValue = static_cast<int>(mem[pc++]);
+            if (reg8[regIndex1] != reg8[regIndex2])
+            {
+                pc = (immediateValue * 4) - 4;
+            }
+            break;
+        }
+        case OPCODE_BEQZ:
+        {
+            int regIndex1 = static_cast<int>(mem[pc++]);
+            int immediateValue = static_cast<int>(mem[pc++]);
+            pc++;
+            if (reg8[regIndex1] == 0)
+            {
+                pc = (immediateValue * 4) - 4;
+            }
+            break;
+        }
+        case OPCODE_STL:
+        {
+            int regIndex1 = static_cast<int>(mem[pc++]);
+            int regIndex2 = static_cast<int>(mem[pc++]);
+            int immediateValue = static_cast<int>(mem[pc++]);
+            if (reg8[regIndex1] > reg8[regIndex2])
+            {
+                pc = (immediateValue * 4) - 4;
+            }
             break;
         }
         default:
