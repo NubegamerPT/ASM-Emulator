@@ -1,5 +1,4 @@
 #include "window.h"
-#include "../cpu.h"
 
 WINDOW *create_newPanel(int height, int width, int starty, int startx)
 {
@@ -89,7 +88,7 @@ void displayMemory(WINDOW *local_win, int mem_size, CPU &core)
         // Check if the current memory address matches the PC
         if (i == pc || i + 1 == pc || i + 2 == pc || i + 3 == pc)
         {
-            if (pc == core.getSC())
+            if (pc == core.getSC() - 4)
             {
                 wattron(local_win, COLOR_PAIR(1));
                 print(local_win, i / 4 + 1, 1, dump_line);
@@ -147,4 +146,13 @@ void printColor(WINDOW *local_win, int color, int y, int x, const char *text)
     mvwprintw(local_win, y, x + 1, text);
     wattroff(local_win, COLOR_PAIR(color));
     wrefresh(local_win);
+}
+
+void get_user_input(WINDOW *terminal, char *input, size_t size) {
+    mvwprintw(terminal, 2, 1, "                                           "); // Clear the line for input
+    mvwprintw(terminal, 2, 2, "> "); // Print cursor
+    wrefresh(terminal); // Refresh to show cursor
+
+    wgetnstr(terminal, input, size - 1); // Get user input
+    wrefresh(terminal); // Refresh to show the entered text
 }

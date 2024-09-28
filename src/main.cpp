@@ -13,8 +13,8 @@
 #include <signal.h>
 #include <iostream>
 
-#include "panels/window.cpp"
-#include "cpu.h"
+#include "panels/window.h"
+#include "files/rw.h"
 
 // Define global windows
 WINDOW *memory, *registers, *program, *terminal, *info, *debug;
@@ -55,14 +55,19 @@ void printREGISTORS(CPU core)
     print8(registers, 6, 18, "SP:  ", core.getSP());
 }
 
-void write(WINDOW* win, std::string program, CPU& core) {
+void write(WINDOW *win, std::string program, CPU &core)
+{
     static int line = 1;
     core.load(program);
     std::ostringstream oss;
     oss << std::setw(3) << line << ": " << program;
     std::string line_number = oss.str();
-    const char* text = line_number.c_str();
-    print(win, line, 1, text);
+    const char *text = line_number.c_str();
+
+    if (line <= 15)
+    {
+        print(win, line, 1, text);
+    }
     line++;
 }
 
@@ -75,7 +80,6 @@ int main()
 
     resize_term(40, 200);
 
-    noecho();
     cbreak();
     keypad(stdscr, TRUE); // Enable special keys like arrows
     curs_set(0);
@@ -87,40 +91,83 @@ int main()
         init_pair(2, COLOR_GREEN, COLOR_BLACK);  // Green text on black background
         init_pair(3, COLOR_YELLOW, COLOR_BLACK); // Yellow text on black background
         init_pair(4, COLOR_BLUE, COLOR_BLACK);   // Blue text on black background
-        init_pair(5, COLOR_BLACK, COLOR_WHITE); // Black text on white background
+        init_pair(5, COLOR_BLACK, COLOR_WHITE);  // Black text on white background
     }
 
     refresh();
+    bool FileExists = true;
+    intptr_t fd;
+    char input[256]; // Adjust the size as needed
+    bool hasStoped = false;
 
-    /* memory = create_newPanel(LINES - 3, (COLS / 7) * 1, 0, 0, "Memory panel");
-    terminal = create_newPanel(LINES - 3, (COLS / 7) * 3, 0, (COLS / 6) * 1, "Terminal panel");
-    registers = create_newPanel((LINES / 5) * 2, (COLS / 8) * 2, 0, (COLS / 8) * 5, "Registors panel");
-    program = create_newPanel((LINES / 5) * 3 - 2, (COLS / 8) * 2, (LINES / 5) * 2, (COLS / 8) * 5, "Stack panel");
-    info = create_newPanel(3, COLS, LINES - 3, 0, "Info panel"); */
-
-    memory = create_newPanel(LINES - 3, (COLS / 7) * 1, 0, 0, "Memory panel");
     terminal = create_newPanel((LINES / 4) * 2, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
+    memory = create_newPanel(LINES - 3, (COLS / 7) * 1, 0, 0, "Memory panel");
     debug = create_newPanel(((LINES / 4) * 2) - 3, (COLS / 7) * 4, (LINES / 4) * 2, (COLS / 7) * 1, "Editor panel");
     registers = create_newPanel((LINES / 5) * 1, ((COLS / 7) * 2) + 4, 0, (COLS / 7) * 5, "Registors panel");
     program = create_newPanel(((LINES / 5) * 4) - 3, ((COLS / 7) * 2) + 4, (LINES / 5) * 1, (COLS / 7) * 5, "Stack panel");
     info = create_newPanel(3, COLS, LINES - 3, 0, "Info panel");
 
-    print(info, 1, 1, "Info: Press [F] to go step-by-step or [R] to run the program");
+    echo();
 
-    write(debug, "load a8 1", core);
-    write(debug, "push a8", core);
-    write(debug, "load a8 2", core);
-    write(debug, "push a8", core);
-    write(debug, "load a8 3", core);
-    write(debug, "push a8", core);
-    write(debug, "load a8 4", core);
-    write(debug, "push a8", core);
-    write(debug, "load a8 5", core);
-    write(debug, "push a8", core);
-    write(debug, "pop a8", core);
-    write(debug, "halt", core);
+    do
+    {
+        refresh();
+        print(terminal, 1, 1, "Enter the file name");
+        get_user_input(terminal, input, sizeof(input) / sizeof(input[0]));
 
-    bool hasStoped = false;
+        std::string new_filename = std::string(input) + ".s";
+        strcpy(input, new_filename.c_str());
+
+        if (input[0] == '\0')
+        {
+            printColor(terminal, 3, 3, 1, "Info: Please enter a valid file name");
+            FileExists = false;
+        }
+        else
+        {
+            fd = open_file(input);
+            if (fd == -1)
+            {
+                printColor(terminal, 1, 3, 1, "Error: File does not exist                              ");
+                FileExists = false;
+            }
+            else
+            {
+                FileExists = true;
+            }
+        }
+    } while (!FileExists);
+
+    if (fd != -1)
+    {
+        close_file(fd);
+    }
+
+    terminal = create_newPanel((LINES / 4) * 2, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
+    noecho();
+
+    printColor(terminal, 2, 1, 1, "Info: File successfully loaded");
+
+    try
+    {
+        std::vector<std::string> lines = read_lines(input);
+
+        for (auto line : lines)
+        {
+            write(debug, line, core);
+        }
+    }
+    catch (const std::runtime_error &e)
+    {
+        printColor(terminal, 3, 2, 1, "Error: File could not be read or had no information");
+        hasStoped = true;
+    }
+
+    print(info, 1, 1, "Info: Press [F] to go step-by-step or [R] to run the program. Press [Q] to quit");
+
+    bool triedExit = false;
+    bool showInfo = true;
+    int temp = 0;
 
     while (!hasStoped)
     {
@@ -129,18 +176,19 @@ int main()
         displayStack(program, 106, core);
         int ch = getch(); // Get user input, non-blocking due to nodelay
 
-        // Check for F1 key press
-        if ((ch == 'f' || ch == 'F') && !hasStoped)
+        if ((ch == 'f' || ch == 'F'))
         {
-            print(info, 1, 1, "                                                                                                    ");
-            printColor(info, 2, 1, 1, "Info: Program running on step-by-step mode");
-            // Execute some function, e.g., core.execute();
-            int temp = core.execute(); // Your CPU's execute method
-
-            if (temp == 1)
+            if (showInfo)
             {
                 print(info, 1, 1, "                                                                                                    ");
-                printColor(info, 3, 1, 1, "Info: Program has reached HALT!");
+                printColor(info, 2, 1, 1, "Info: Program running on step-by-step mode");
+                showInfo = false;
+            }
+
+            if (core.execute() == 1 || core.getSC() == 0)
+            {
+                print(info, 1, 1, "                                                                                                    ");
+                printColor(info, 3, 1, 1, "Info: Program has reached HALT! Press [Q] to exit");
                 hasStoped = true;
             }
         }
@@ -148,6 +196,7 @@ int main()
         // Check for 'q' or 'Q' key press to quit
         if (ch == 'q' || ch == 'Q')
         {
+            triedExit = true;
             break; // Exit the loop
         }
 
@@ -158,15 +207,21 @@ int main()
             while (core.execute() != 1)
             {
                 printREGISTORS(core);
-                sleep_ms(200);
+                displayMemory(memory, 138, core);
+                displayStack(program, 106, core);
+                sleep_ms(300);
             }
             print(info, 1, 1, "                                                                                                    ");
-            printColor(info, 3, 1, 1, "Info: Program has reached HALT!");
+            printColor(info, 3, 1, 1, "Info: Program has reached HALT! Press [Q] to exit");
             hasStoped = true;
+            break;
         }
     }
 
-    while(getch() != 'q') {}
+    while (getch() != 'q' || triedExit)
+    {
+    }
+
     endwin(); // close the window
     return 0;
 }
