@@ -30,13 +30,13 @@ intptr_t open_file(const char* filename) {
     
     if (hFile == INVALID_HANDLE_VALUE) {
         DWORD error_code = GetLastError();
-        throw std::runtime_error("Error: Unable to open file " + std::string(filename) + ". Error code: " + std::to_string(error_code));
+        return -1;
     }
     return (intptr_t)hFile;
 #else
     int fd = open(filename, O_RDONLY); // Open file read-only
     if (fd == -1) {
-        throw std::runtime_error("Error: Unable to open file " + std::string(filename) + ". Error code: " + std::to_string(error_code));
+        return -1;
     }
     return fd;
 #endif

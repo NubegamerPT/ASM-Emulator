@@ -29,7 +29,7 @@ enum opcode
     OPCODE_ADDI = 0x09,
     OPCODE_SUBB = 0x0A,
     OPCODE_LOAD = 0x0B,
-    OPCODE_STORE = 0x0C,
+    OPCODE_JP = 0x0C,
     OPCODE_PUSH = 0x0D,
     OPCODE_POP = 0x0E,
     OPCODE_CLEAR = 0x0F,
@@ -49,7 +49,7 @@ private:
 
     // 16 bit registers
     uint16_t reg16[2] = {0};
-    uint16_t pc = 0;
+    int pc = 0;
     uint16_t sc = 0;
     uint16_t sp = 0;
 
@@ -73,7 +73,7 @@ private:
         {"addi", OPCODE_ADDI},
         {"subb", OPCODE_SUBB},
         {"load", OPCODE_LOAD},
-        {"store", OPCODE_STORE},
+        {"jp", OPCODE_JP},
         {"push", OPCODE_PUSH},
         {"pop", OPCODE_POP},
         {"clear", OPCODE_CLEAR},
@@ -162,12 +162,11 @@ public:
             reg8[regIndex] = imidiate;
             break;
         }
-        case OPCODE_STORE:
+        case OPCODE_JP:
         {
-            uint16_t regIndex = static_cast<int>(mem[pc++]);
-            uint16_t imidiate = static_cast<int>(mem[pc++]);
-            pc++;
-            mem[imidiate] = reg8[regIndex];
+            int poss = static_cast<int>(mem[pc++]);
+            pc += 2;
+            pc = poss;
             break;
         }
         case OPCODE_PUSH:

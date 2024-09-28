@@ -64,7 +64,7 @@ void write(WINDOW *win, std::string program, CPU &core)
     std::string line_number = oss.str();
     const char *text = line_number.c_str();
 
-    if (line <= 15)
+    if (line < getmaxy(win) - 1)
     {
         print(win, line, 1, text);
     }
@@ -100,9 +100,9 @@ int main()
     char input[256]; // Adjust the size as needed
     bool hasStoped = false;
 
-    terminal = create_newPanel((LINES / 4) * 2, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
+    terminal = create_newPanel(5, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
     memory = create_newPanel(LINES - 3, (COLS / 7) * 1, 0, 0, "Memory panel");
-    debug = create_newPanel(((LINES / 4) * 2) - 3, (COLS / 7) * 4, (LINES / 4) * 2, (COLS / 7) * 1, "Editor panel");
+    debug = create_newPanel(LINES - 8, (COLS / 7) * 4, 5, (COLS / 7) * 1, "Editor panel");
     registers = create_newPanel((LINES / 5) * 1, ((COLS / 7) * 2) + 4, 0, (COLS / 7) * 5, "Registors panel");
     program = create_newPanel(((LINES / 5) * 4) - 3, ((COLS / 7) * 2) + 4, (LINES / 5) * 1, (COLS / 7) * 5, "Stack panel");
     info = create_newPanel(3, COLS, LINES - 3, 0, "Info panel");
@@ -143,7 +143,7 @@ int main()
         close_file(fd);
     }
 
-    terminal = create_newPanel((LINES / 4) * 2, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
+    terminal = create_newPanel(5, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
     noecho();
 
     printColor(terminal, 2, 1, 1, "Info: File successfully loaded");
