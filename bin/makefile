@@ -7,14 +7,14 @@ LDFLAGS = -lncurses
 OUT = ASM
 
 # Source files
-SRC = ../src/main.cpp
+SRC = ../src/main.cpp ../src/panels/window.cpp ../src/files/rw.cpp
 
 # OS detection
 ifeq ($(OS),Windows_NT)
     RM = del /Q
     EXE = .exe
-    CFLAGS += -I/C:/msys64/mingw64/include
-    LDFLAGS += -L/C:/msys64/mingw64/lib -lncursesw
+    CFLAGS += -I"C:/msys64/mingw64/include"
+    LDFLAGS += -L"C:/msys64/mingw64/lib" -lncursesw
 else
     RM = rm -f
     EXE =
@@ -27,12 +27,12 @@ else
 endif
 
 # All target
-all: $(OUT)
+all: $(OUT)$(EXE)
 
 # Build target
-$(OUT): $(SRC)
-	$(CC) $(SRC) -o $(OUT)$(EXE) $(CFLAGS) $(LDFLAGS)
+$(OUT)$(EXE): $(SRC)
+	$(CC) $(CFLAGS) $(SRC) -o $(OUT)$(EXE) $(LDFLAGS)
 
-# Clean up
+# Clean target
 clean:
 	$(RM) $(OUT)$(EXE)
