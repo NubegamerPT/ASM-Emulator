@@ -37,13 +37,11 @@ intptr_t open_file(const char* filename) {
         return -1;
     }
     return (intptr_t)hFile;
-
 #else
-    char result[PATH_MAX];
-    ssize_t count = -1;
-
 #ifdef __APPLE__
     // macOS-specific way to get the executable path
+    char result[PATH_MAX];
+    ssize_t count = -1;
     uint32_t size = PATH_MAX;
     if (_NSGetExecutablePath(result, &size) != 0) {
         std::cerr << "Error: Buffer too small; can't get executable path" << std::endl;
