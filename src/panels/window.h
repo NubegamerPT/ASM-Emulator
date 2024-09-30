@@ -13,8 +13,8 @@
 #include <string>
 #include "../cpu.h"
 
-#define SCREEN_WIDTH 92
-#define SCREEN_HEIGHT 28
+#define SCREEN_WIDTH 60
+#define SCREEN_HEIGHT 240
 
 WINDOW *create_newPanel(int height, int width, int starty, int startx);
 
