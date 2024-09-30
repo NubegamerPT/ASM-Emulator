@@ -16,6 +16,7 @@
 #include <errno.h>
 #endif
 
+#define PATH_MAX 1024
 #define BUFFER_SIZE 1024
 
 // Function to open the file
@@ -50,6 +51,8 @@ intptr_t open_file(const char* filename) {
     count = strlen(result);
 #else
     // Linux-specific way to get the executable path
+    char result[PATH_MAX];
+    ssize_t count = readlink("prco/self/exe", result, PATH_MAX);
     count = readlink("/proc/self/exe", result, PATH_MAX);
     if (count == -1) {
         std::cerr << "Error reading executable path: " << strerror(errno) << std::endl;
