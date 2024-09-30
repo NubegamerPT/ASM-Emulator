@@ -8,6 +8,9 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -30,14 +33,46 @@ intptr_t open_file(const char* filename) {
     
     if (hFile == INVALID_HANDLE_VALUE) {
         DWORD error_code = GetLastError();
+        std::cerr << "Error opening file on Windows: " << error_code << std::endl;
         return -1;
     }
     return (intptr_t)hFile;
+
 #else
-    int fd = open(filename, O_RDONLY); // Open file read-only
-    if (fd == -1) {
+    char result[PATH_MAX];
+    ssize_t count = -1;
+
+#ifdef __APPLE__
+    // macOS-specific way to get the executable path
+    uint32_t size = PATH_MAX;
+    if (_NSGetExecutablePath(result, &size) != 0) {
+        std::cerr << "Error: Buffer too small; can't get executable path" << std::endl;
         return -1;
     }
+    count = strlen(result);
+#else
+    // Linux-specific way to get the executable path
+    count = readlink("/proc/self/exe", result, PATH_MAX);
+    if (count == -1) {
+        std::cerr << "Error reading executable path: " << strerror(errno) << std::endl;
+        return -1;
+    }
+#endif
+
+    // Find the directory of the executable
+    std::string exePath = std::string(result, count);
+    std::string exeDir = exePath.substr(0, exePath.find_last_of("/"));
+
+    // Construct the full path to the file
+    std::string fullPath = exeDir + "/" + filename;
+    
+    // Open the file in read-only mode
+    int fd = open(fullPath.c_str(), O_RDONLY);
+    if (fd == -1) {
+        std::cerr << "Error opening file: " << strerror(errno) << std::endl;
+        return -1;
+    }
+
     return fd;
 #endif
 }
