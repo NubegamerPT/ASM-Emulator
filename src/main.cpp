@@ -16,9 +16,6 @@
 #include "panels/window.h"
 #include "files/rw.h"
 
-// Define global windows
-WINDOW *memory, *registers, *program, *terminal, *info, *debug;
-
 void sleep_ms(int milliseconds)
 {
 #ifdef _WIN32
@@ -28,19 +25,7 @@ void sleep_ms(int milliseconds)
 #endif
 }
 
-void init_colors()
-{
-    if (has_colors() == FALSE)
-    {
-        endwin();
-        std::cerr << "Your terminal does not support color." << std::endl;
-        exit(1);
-    }
-    start_color();
-    init_pair(1, COLOR_GREEN, COLOR_BLACK); // Define color pair 1 as green text on a black background
-}
-
-void printREGISTORS(CPU core)
+void printREGISTORS(CPU core, WINDOW *registers)
 {
     print(registers, 1, 1, "Registers:");
     print8(registers, 2, 2, "A8: ", core.getREG8(0));
@@ -53,6 +38,17 @@ void printREGISTORS(CPU core)
     printff(registers, 4, 18, "AF:  ", core.getREGF(0));
     printff(registers, 5, 18, "BF:  ", core.getREGF(1));
     print8(registers, 6, 18, "SP:  ", core.getSP());
+}
+void init_colors()
+{
+    if (has_colors() == FALSE)
+    {
+        endwin();
+        std::cerr << "Your terminal does not support color." << std::endl;
+        exit(1);
+    }
+    start_color();
+    init_pair(1, COLOR_GREEN, COLOR_BLACK); // Define color pair 1 as green text on a black background
 }
 
 void write(WINDOW *win, std::string program, CPU &core)
@@ -75,10 +71,30 @@ int main()
 {
     CPU core;
 
+    system("printf '\\e[8;60;240t'");  // Sends escape code to resize terminal
+
     // Initialize ncurses
     initscr();
+    cbreak();
+    noecho();
 
-    resize_term(40, 200);
+    int width = SCREEN_HEIGHT;
+    int height = SCREEN_WIDTH;
+
+    int start_y = 1;
+    int start_x = 1;
+
+    getmaxyx(stdscr, height, width);
+
+    WINDOW *win = newwin(height, width, start_y, start_x);
+    WINDOW *memory = newwin(138, 60, 0, 0);
+    WINDOW *registers = newwin(5, 60, 0, 60);
+    WINDOW *program = newwin(106, 60, 5, 60);
+    WINDOW *terminal = newwin(5, 180, 0, 120);
+    WINDOW *info = newwin(3, 240, 5, 0);
+    WINDOW *debug = newwin(138, 180, 0, 120);
+    
+    wrefresh(win);
 
     cbreak();
     keypad(stdscr, TRUE); // Enable special keys like arrows
@@ -100,12 +116,14 @@ int main()
     char input[256]; // Adjust the size as needed
     bool hasStoped = false;
 
-    terminal = create_newPanel(5, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
-    memory = create_newPanel(LINES - 3, (COLS / 7) * 1, 0, 0, "Memory panel");
-    debug = create_newPanel(LINES - 8, (COLS / 7) * 4, 5, (COLS / 7) * 1, "Editor panel");
-    registers = create_newPanel((LINES / 5) * 1, ((COLS / 7) * 2) + 4, 0, (COLS / 7) * 5, "Registors panel");
-    program = create_newPanel(((LINES / 5) * 4) - 3, ((COLS / 7) * 2) + 4, (LINES / 5) * 1, (COLS / 7) * 5, "Stack panel");
-    info = create_newPanel(3, COLS, LINES - 3, 0, "Info panel");
+    cbreak();
+
+    terminal = create_newPanel(5, (width / 7) * 4, 0, (width / 7) * 1, "Terminal panel");
+    memory = create_newPanel(height - 3, (width / 7) * 1, 0, 0, "Memory panel");
+    debug = create_newPanel(height - 8, (width / 7) * 4, 5, (width / 7) * 1, "Editor panel");
+    registers = create_newPanel((height / 5) * 1, ((width / 7) * 2), 0, (width / 7) * 5, "Registors panel");
+    program = create_newPanel(((height / 5) * 4) - 3, ((width / 7) * 2), (height / 5) * 1, (width / 7) * 5, "Stack panel");
+    info = create_newPanel(3, width, height - 3, 0, "Info panel");
 
     echo();
 
@@ -143,7 +161,7 @@ int main()
         close_file(fd);
     }
 
-    terminal = create_newPanel(5, (COLS / 7) * 4, 0, (COLS / 7) * 1, "Terminal panel");
+    terminal = create_newPanel(5, (height / 7) * 4, 0, (width / 7) * 1, "Terminal panel");
     noecho();
 
     printColor(terminal, 2, 1, 1, "Info: File successfully loaded");
@@ -171,7 +189,7 @@ int main()
 
     while (!hasStoped)
     {
-        printREGISTORS(core);
+        printREGISTORS(core, registers);
         displayMemory(memory, 138, core);
         displayStack(program, 106, core);
         int ch = getch(); // Get user input, non-blocking due to nodelay
@@ -206,7 +224,7 @@ int main()
             printColor(info, 4, 1, 1, "Info: Program running on automatic mode");
             while (core.execute() != 1)
             {
-                printREGISTORS(core);
+                printREGISTORS(core, registers);
                 displayMemory(memory, 138, core);
                 displayStack(program, 106, core);
                 sleep_ms(300);

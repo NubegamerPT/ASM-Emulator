@@ -1,16 +1,21 @@
 #ifndef RW_H
 #define RW_H
 
-#include <iostream>
 #include <vector>
-#include <cstring> // For strerror
-#include <errno.h> // For error handling
+#include <string>
+#include <iostream>
+#include <cstring>
+#include <fstream> // Add this line´
 
 #ifdef _WIN32
-#include <windows.h> // Windows API
+#include <windows.h>
 #else
-#include <fcntl.h>   // For open()
-#include <unistd.h>  // For read() and close()
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
 #endif
 
 const size_t BUFFER_SIZE = 4096; // Buffer size for reading data
