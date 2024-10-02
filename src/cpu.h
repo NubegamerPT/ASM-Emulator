@@ -38,6 +38,9 @@ enum opcode
     OPCODE_BEQZ = 0x11, // Branch if equal to zero
     OPCODE_STL = 0x12, // Branch if bigger or equal
 
+    OPCODE_ADDR = 0x13,
+    OPCODE_SUBR = 0x14,
+
     OPCODE_HALT = 0xF0,
     OPCODE_NULL = 0xFF,
 };
@@ -81,6 +84,8 @@ private:
         {"bne", OPCODE_BNE},
         {"beqz", OPCODE_BEQZ},
         {"stl", OPCODE_STL},
+        {"addr", OPCODE_ADDR},
+        {"subr", OPCODE_SUBR},
         {"halt", OPCODE_HALT},
         {"null", OPCODE_NULL},
     };
@@ -228,6 +233,22 @@ public:
             {
                 pc = (immediateValue * 4) - 4;
             }
+            break;
+        }
+        case OPCODE_ADDR:
+        {
+            int regIndex1 = static_cast<int>(mem[pc++]);
+            int regIndex2 = static_cast<int>(mem[pc++]);
+            int regIndex3 = static_cast<int>(mem[pc++]);
+            reg8[regIndex1] = reg8[regIndex2] + reg8[regIndex3];
+            break;
+        }
+        case OPCODE_SUBR:
+        {
+            int regIndex1 = static_cast<int>(mem[pc++]);
+            int regIndex2 = static_cast<int>(mem[pc++]);
+            int regIndex3 = static_cast<int>(mem[pc++]);
+            reg8[regIndex1] = reg8[regIndex2] - reg8[regIndex3];
             break;
         }
         default:
