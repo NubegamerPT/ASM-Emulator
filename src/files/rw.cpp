@@ -14,9 +14,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#define PATH_MAX 1024
 #endif
 
-#define PATH_MAX 1024
 #define BUFFER_SIZE 1024
 
 // Function to open the file

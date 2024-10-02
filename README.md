@@ -30,6 +30,20 @@ I've picked the best features of assembly language while leaving out the complex
 
 ---
 
+## Future Plans:
+
+- **Ready to implement:**
+  - Custom Variables
+  - Float and 16-bit Operations
+  - Shift and Other Commands
+
+- ***Far-away-future:***
+  - Built in Text-Editor
+  - Functions
+  - UI and User Input/Output
+
+---
+
 ## 🚀 Ready to Start?
 
 Simply donwload the most recent Package (soon available), and get ready to start mashing your keyboard!
