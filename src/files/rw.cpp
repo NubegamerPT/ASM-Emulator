@@ -45,8 +45,7 @@ intptr_t open_file(const char* filename) {
     ssize_t count = -1;
     uint32_t size = PATH_MAX;
     if (_NSGetExecutablePath(result, &size) != 0) {
-        std::cerr << "Error: Buffer too small; can't get executable path" << std::endl;
-        return -1;
+        return -2;
     }
     count = strlen(result);
 #else
@@ -55,8 +54,7 @@ intptr_t open_file(const char* filename) {
     ssize_t count = readlink("prco/self/exe", result, PATH_MAX);
     count = readlink("/proc/self/exe", result, PATH_MAX);
     if (count == -1) {
-        std::cerr << "Error reading executable path: " << strerror(errno) << std::endl;
-        return -1;
+        return -3;
     }
 #endif
 
@@ -70,7 +68,6 @@ intptr_t open_file(const char* filename) {
     // Open the file in read-only mode
     int fd = open(fullPath.c_str(), O_RDONLY);
     if (fd == -1) {
-        std::cerr << "Error opening file: " << strerror(errno) << std::endl;
         return -1;
     }
 
