@@ -161,7 +161,7 @@ int main()
         close_file(fd);
     }
 
-    terminal = create_newPanel(5, (height / 7) * 4, 0, (width / 7) * 1, "Terminal panel");
+    terminal = create_newPanel(5, (width / 7) * 4, 0, (width / 7) * 1, "Terminal panel");
     noecho();
 
     printColor(terminal, 2, 1, 1, "Info: File successfully loaded");
