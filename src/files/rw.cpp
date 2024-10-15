@@ -3,7 +3,7 @@
 #include <string>
 #include <iostream>
 #include <cstring>
-#include <fstream> // Add this line´
+#include <fstream>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -126,7 +126,7 @@ std::vector<std::string> read_lines(const char *filename)
         current_line.append(buffer, bytes_read);
         size_t pos;
         while ((pos = current_line.find('\n')) != std::string::npos)
-        {
+        { 
             lines.push_back(current_line.substr(0, pos));
             current_line.erase(0, pos + 1);
         }
